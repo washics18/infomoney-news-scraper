@@ -1,0 +1,7 @@
+com/infomoney/service/NewsScraperService.class
+com/infomoney/App.class
+com/infomoney/repository/ArticleRepository.class
+com/infomoney/config/AppConfig.class
+com/infomoney/controller/NewsController.class
+com/infomoney/model/Article.class
+com/infomoney/InfomoneyNewsScraperApplication.class
