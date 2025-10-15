@@ -21,7 +21,7 @@ import java.util.Locale;
 public class NewsScraperService {
 
     private static final String API_URL =
-            "https://www.infomoney.com.br/wp-json/wp/v2/posts?categories=24&page=";
+            "https://www.infomoney.com.br/wp-json/wp/v2/posts?per_page=10&_embed&page=";
     private static final int MAX_PAGES = 3;
 
     @Autowired
@@ -32,6 +32,7 @@ public class NewsScraperService {
 
     public List<Article> scrapeNews() {
         List<Article> articles = new ArrayList<>();
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         for (int i = 1; i <= MAX_PAGES; i++) {
             String url = API_URL + i;
@@ -39,47 +40,96 @@ public class NewsScraperService {
 
             try {
                 String jsonResponse = restTemplate.getForObject(url, String.class);
+                if (jsonResponse == null || jsonResponse.isEmpty()) {
+                    System.out.println("⚠️ Nenhuma resposta da API nesta página.");
+                    continue;
+                }
+
                 JsonNode root = objectMapper.readTree(jsonResponse);
+                if (!root.isArray() || root.size() == 0) {
+                    System.out.println("⚠️ Nenhum artigo encontrado nesta página.");
+                    continue;
+                }
 
                 for (JsonNode post : root) {
                     Article article = new Article();
 
-                    // Dados básicos
-                    article.setTitle(post.get("title").get("rendered").asText());
-                    article.setSubtitle(post.get("excerpt").get("rendered").asText()
-                            .replaceAll("<[^>]*>", "").trim());
-                    article.setUrl(post.get("link").asText());
+                    // URL
+                    JsonNode linkNode = post.get("link");
+                    String postUrl = linkNode != null ? linkNode.asText() : "";
+                    // Filtrar apenas seção Mercado
+                    if (!postUrl.contains("/mercados/")) {
+                        continue; // pula artigos de outras seções
+                    }
+                    article.setUrl(postUrl);
+
+                    // Título
+                    JsonNode titleNode = post.get("title");
+                    article.setTitle(titleNode != null && titleNode.get("rendered") != null
+                            ? titleNode.get("rendered").asText()
+                            : "Título indisponível");
+
+                    // Subtítulo
+                    JsonNode excerptNode = post.get("excerpt");
+                    article.setSubtitle(excerptNode != null && excerptNode.get("rendered") != null
+                            ? excerptNode.get("rendered").asText().replaceAll("<[^>]*>", "").trim()
+                            : "");
 
                     // Data
-                    String dateString = post.get("date").asText(); // Ex: 2025-10-14T13:45:00
-                    LocalDateTime dateTime = LocalDateTime.parse(
-                            dateString.substring(0, 19),
-                            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-                    );
-                    article.setPublicationDate(dateTime);
+                    try {
+                        JsonNode dateNode = post.get("date");
+                        if (dateNode != null) {
+                            String dateString = dateNode.asText().substring(0, 19);
+                            LocalDateTime dateTime = LocalDateTime.parse(
+                                    dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                            );
+                            article.setPublicationDate(dateTime);
+                        }
+                    } catch (Exception e) {
+                        article.setPublicationDate(null);
+                    }
 
-                    // Autor (opcional)
-                    JsonNode authorNode = post.get("_embedded") != null ? post.get("_embedded").get("author") : null;
-                    if (authorNode != null && authorNode.isArray() && authorNode.size() > 0) {
-                        article.setAuthor(authorNode.get(0).get("name").asText());
-                    } else {
+                    // Autor
+                    try {
+                        JsonNode authorNode = post.get("_embedded") != null
+                                ? post.get("_embedded").get("author")
+                                : null;
+                        if (authorNode != null && authorNode.isArray() && authorNode.size() > 0) {
+                            article.setAuthor(authorNode.get(0).get("name").asText());
+                        } else {
+                            article.setAuthor("N/A");
+                        }
+                    } catch (Exception e) {
                         article.setAuthor("N/A");
                     }
 
                     // Conteúdo completo
                     try {
-                        Document articleDoc = Jsoup.connect(article.getUrl()).get();
-                        Element contentElement = articleDoc.selectFirst("div.article-content, div.single-content, article");
-                        if (contentElement != null) {
-                            String cleanText = contentElement.text().replaceAll("\\s+", " ").trim();
-                            article.setContent(cleanText);
+                        if (!article.getUrl().isEmpty()) {
+                            Document doc = Jsoup.connect(article.getUrl()).get();
+                            Element contentElement = doc.selectFirst("div.article-content, div.single-content, article");
+                            if (contentElement != null) {
+                                article.setContent(contentElement.text().replaceAll("\\s+", " ").trim());
+                            }
                         }
                     } catch (Exception e) {
-                        System.err.println("⚠️ Falha ao obter conteúdo da URL " + article.getUrl());
+                        System.err.println("⚠️ Falha ao obter conteúdo da URL: " + article.getUrl());
                     }
 
+                    // Impressão formatada
+                    System.out.println("--------------------------------------------------");
+                    System.out.println("Título: " + article.getTitle());
+                    System.out.println("Subtítulo: " + article.getSubtitle());
+                    System.out.println("Autor: " + article.getAuthor());
+                    if (article.getPublicationDate() != null) {
+                        System.out.println("Data: " + article.getPublicationDate().format(outputFormatter));
+                    } else {
+                        System.out.println("Data: N/A");
+                    }
+                    System.out.println("URL: " + article.getUrl());
+                    System.out.println("Conteúdo: " + article.getContent());
+
                     articles.add(article);
-                    System.out.println("✅ Encontrado: " + article.getTitle());
                 }
 
             } catch (Exception e) {
