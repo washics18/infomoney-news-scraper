@@ -2,6 +2,7 @@ package com.infomoney.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.infomoney.dto.ArticleDTO;
 import com.infomoney.model.Article;
 import com.infomoney.repository.ArticleRepository;
 import org.jsoup.Jsoup;
@@ -34,8 +35,8 @@ public class NewsScraperService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public List<Article> scrapeNews() {
-        List<Article> articles = new ArrayList<>();
+    public List<ArticleDTO> scrapeNews() {
+        List<ArticleDTO> dtos = new ArrayList<>();
         DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         for (int i = 1; i <= MAX_PAGES; i++) {
@@ -56,75 +57,54 @@ public class NewsScraperService {
                 }
 
                 for (JsonNode post : root) {
-                    Article article = new Article();
+                    String postUrl = post.path("link").asText("");
+                    if (!postUrl.contains("/mercados/")) continue;
 
-                    JsonNode linkNode = post.get("link");
-                    String postUrl = linkNode != null ? linkNode.asText() : "";
-
-                    if (!postUrl.contains("/mercados/")) {
-                        continue;
-                    }
-                    article.setUrl(postUrl);
-
-                    JsonNode titleNode = post.get("title");
-                    article.setTitle(titleNode != null && titleNode.get("rendered") != null
-                            ? titleNode.get("rendered").asText()
-                            : "Título indisponível");
-
-                    JsonNode excerptNode = post.get("excerpt");
-                    article.setSubtitle(excerptNode != null && excerptNode.get("rendered") != null
-                            ? excerptNode.get("rendered").asText().replaceAll("<[^>]*>", "").trim()
-                            : "");
+                    ArticleDTO dto = new ArticleDTO();
+                    dto.setUrl(postUrl);
+                    dto.setTitle(post.path("title").path("rendered").asText("Título indisponível"));
+                    dto.setSubtitle(post.path("excerpt").path("rendered").asText("").replaceAll("<[^>]*>", "").trim());
 
                     try {
-                        JsonNode dateNode = post.get("date");
-                        if (dateNode != null) {
-                            String dateString = dateNode.asText().substring(0, 19);
-                            LocalDateTime dateTime = LocalDateTime.parse(
-                                    dateString, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-                            );
-                            article.setPublicationDate(dateTime);
-                        }
+                        String dateString = post.path("date").asText("").substring(0, 19);
+                        LocalDateTime dateTime = LocalDateTime.parse(
+                                dateString,
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                        );
+                        dto.setPublicationDate(dateTime);
                     } catch (Exception e) {
-                        article.setPublicationDate(null);
+                        dto.setPublicationDate(null);
                     }
 
                     try {
-                        JsonNode authorNode = post.get("_embedded") != null
-                                ? post.get("_embedded").get("author")
-                                : null;
-                        if (authorNode != null && authorNode.isArray() && authorNode.size() > 0) {
-                            article.setAuthor(authorNode.get(0).get("name").asText());
-                        } else {
-                            article.setAuthor("N/A");
-                        }
+                        JsonNode authorNode = post.path("_embedded").path("author");
+                        dto.setAuthor(authorNode.isArray() && authorNode.size() > 0
+                                ? authorNode.get(0).path("name").asText()
+                                : "N/A");
                     } catch (Exception e) {
-                        article.setAuthor("N/A");
+                        dto.setAuthor("N/A");
                     }
 
                     try {
-                        if (!article.getUrl().isEmpty()) {
-                            Document doc = Jsoup.connect(article.getUrl()).get();
+                        if (!dto.getUrl().isEmpty()) {
+                            Document doc = Jsoup.connect(dto.getUrl()).get();
                             Element contentElement = doc.selectFirst("div.article-content, div.single-content, article");
                             if (contentElement != null) {
-                                article.setContent(contentElement.text().replaceAll("\\s+", " ").trim());
+                                dto.setContent(contentElement.text().replaceAll("\\s+", " ").trim());
                             }
                         }
                     } catch (Exception e) {
-                        logger.warn("⚠️ Falha ao obter conteúdo da URL: {}", article.getUrl(), e);
+                        logger.warn("⚠️ Falha ao obter conteúdo da URL: {}", dto.getUrl(), e);
                     }
 
-                    logger.info("--------------------------------------------------");
-                    logger.info("Título: {}", article.getTitle());
-                    logger.info("Subtítulo: {}", article.getSubtitle());
-                    logger.info("Autor: {}", article.getAuthor());
-                    logger.info("Data: {}", article.getPublicationDate() != null
-                            ? article.getPublicationDate().format(outputFormatter)
-                            : "N/A");
-                    logger.info("URL: {}", article.getUrl());
-                    logger.info("Conteúdo: {}", article.getContent());
+                    logger.info("Título: {}", dto.getTitle());
+                    logger.info("Subtítulo: {}", dto.getSubtitle());
+                    logger.info("Autor: {}", dto.getAuthor());
+                    logger.info("Data: {}", dto.getPublicationDate() != null ? dto.getPublicationDate().format(outputFormatter) : "N/A");
+                    logger.info("URL: {}", dto.getUrl());
+                    logger.info("Conteúdo: {}", dto.getContent());
 
-                    articles.add(article);
+                    dtos.add(dto);
                 }
 
             } catch (Exception e) {
@@ -132,8 +112,28 @@ public class NewsScraperService {
             }
         }
 
-        logger.info("💾 Total de artigos encontrados: {}", articles.size());
+        logger.info("💾 Total de artigos encontrados: {}", dtos.size());
+        return dtos;
+    }
+
+      public List<Article> saveArticles(List<ArticleDTO> dtos) {
+        List<Article> articles = dtos.stream().map(dto -> {
+            Article article = new Article();
+            article.setTitle(dto.getTitle());
+            article.setSubtitle(dto.getSubtitle());
+            article.setAuthor(dto.getAuthor());
+            article.setUrl(dto.getUrl());
+            article.setContent(dto.getContent());
+            article.setPublicationDate(dto.getPublicationDate());
+            return article;
+        }).toList();
+
         return articleRepository.saveAll(articles);
+    }
+
+    public List<Article> scrapeAndSaveNews() {
+        List<ArticleDTO> dtos = scrapeNews();
+        return saveArticles(dtos);
     }
 
     public List<Article> getAllArticles() {

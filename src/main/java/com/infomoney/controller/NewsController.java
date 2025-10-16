@@ -1,5 +1,6 @@
 package com.infomoney.controller;
 
+import com.infomoney.dto.ArticleDTO;
 import com.infomoney.model.Article;
 import com.infomoney.service.NewsScraperService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ public class NewsController {
     @GetMapping("/scrape")
     public ResponseEntity<?> scrapeAndSaveNews() {
         System.out.println("Iniciando raspagem de notícias...");
-        List<Article> articles = newsScraperService.scrapeNews();
+        List<ArticleDTO> articles = newsScraperService.scrapeNews();
         System.out.println("Raspagem concluída: " + articles.size() + " notícias salvas.");
         return ResponseEntity.ok(articles);
     }
