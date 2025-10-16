@@ -3,6 +3,8 @@ package com.infomoney.controller;
 import com.infomoney.dto.ArticleDTO;
 import com.infomoney.model.Article;
 import com.infomoney.service.NewsScraperService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,11 +19,13 @@ public class NewsController {
     @Autowired
     private NewsScraperService newsScraperService;
 
+    private static final Logger logger = LoggerFactory.getLogger(NewsScraperService.class);
+
     @GetMapping("/scrape")
     public ResponseEntity<?> scrapeAndSaveNews() {
-        System.out.println("Iniciando raspagem de notícias...");
+        logger.info("Iniciando raspagem de notícias...");
         List<ArticleDTO> articles = newsScraperService.scrapeNews();
-        System.out.println("Raspagem concluída: " + articles.size() + " notícias salvas.");
+        logger.info("Raspagem concluída: " + articles.size() + " notícias salvas.");
         return ResponseEntity.ok(articles);
     }
 
