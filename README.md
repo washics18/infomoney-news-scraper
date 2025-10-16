@@ -60,7 +60,7 @@ Siga os passos abaixo para construir e executar a aplicação:
     java -jar target/infomoney-news-scraper-0.0.1-SNAPSHOT.jar
     ```
 
-A aplicação será iniciada na porta padrão 8080.
+A aplicação será iniciada na porta padrão 8081.
 
 ## Endpoints da API
 
@@ -68,22 +68,6 @@ A aplicação expõe os seguintes endpoints REST:
 
 *   **`GET /api/news/scrape`**: Inicia o processo de scraping das notícias do InfoMoney, salva-as no banco de dados H2 e retorna a lista de artigos raspados.
 *   **`GET /api/news`**: Retorna todos os artigos de notícias que foram previamente raspados e salvos no banco de dados.
-
-### Exemplo de Uso
-
-Após iniciar a aplicação, você pode acessar os endpoints usando ferramentas como `curl` ou um navegador web:
-
-*   Para iniciar o scraping e ver as notícias:
-    ```bash
-    curl http://localhost:8080/api/news/scrape
-    ```
-
-*   Para ver todas as notícias salvas:
-    ```bash
-    curl http://localhost:8080/api/news
-    ```
-
-## Detalhes da Solução
 
 ### Scraping de Notícias
 
@@ -121,6 +105,5 @@ Este projeto demonstra a capacidade de integrar diferentes tecnologias (Spring B
 
 ---
 
-**Autor:** Manus AI
-**Data:** 14 de Outubro de 2025
+
 

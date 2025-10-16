@@ -1,7 +1,7 @@
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/repository/ArticleRepository.java
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/service/NewsScraperService.java
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/config/AppConfig.java
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/model/Article.java
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/InfomoneyNewsScraperApplication.java
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/controller/NewsController.java
-/home/ubuntu/infomoney-news-scraper/src/main/java/com/infomoney/App.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\App.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\config\AppConfig.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\controller\NewsController.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\InfomoneyNewsScraperApplication.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\model\Article.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\repository\ArticleRepository.java
+C:\Users\washington.carloss.perpart\Desktop\infomoney-news-scraper\src\main\java\com\infomoney\service\NewsScraperService.java

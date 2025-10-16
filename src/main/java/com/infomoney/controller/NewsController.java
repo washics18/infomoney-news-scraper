@@ -16,7 +16,6 @@ public class NewsController {
     @Autowired
     private NewsScraperService newsScraperService;
 
-    // Endpoint para executar a raspagem e salvar no banco
     @GetMapping("/scrape")
     public ResponseEntity<?> scrapeAndSaveNews() {
         System.out.println("Iniciando raspagem de notícias...");
@@ -25,7 +24,6 @@ public class NewsController {
         return ResponseEntity.ok(articles);
     }
 
-    // Endpoint para listar todas as notícias armazenadas
     @GetMapping
     public ResponseEntity<List<Article>> getAllArticles() {
         List<Article> articles = newsScraperService.getAllArticles();

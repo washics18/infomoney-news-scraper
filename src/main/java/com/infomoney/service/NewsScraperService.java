@@ -54,28 +54,24 @@ public class NewsScraperService {
                 for (JsonNode post : root) {
                     Article article = new Article();
 
-                    // URL
                     JsonNode linkNode = post.get("link");
                     String postUrl = linkNode != null ? linkNode.asText() : "";
-                    // Filtrar apenas seção Mercado
+
                     if (!postUrl.contains("/mercados/")) {
-                        continue; // pula artigos de outras seções
+                        continue;
                     }
                     article.setUrl(postUrl);
 
-                    // Título
                     JsonNode titleNode = post.get("title");
                     article.setTitle(titleNode != null && titleNode.get("rendered") != null
                             ? titleNode.get("rendered").asText()
                             : "Título indisponível");
 
-                    // Subtítulo
                     JsonNode excerptNode = post.get("excerpt");
                     article.setSubtitle(excerptNode != null && excerptNode.get("rendered") != null
                             ? excerptNode.get("rendered").asText().replaceAll("<[^>]*>", "").trim()
                             : "");
 
-                    // Data
                     try {
                         JsonNode dateNode = post.get("date");
                         if (dateNode != null) {
@@ -89,7 +85,6 @@ public class NewsScraperService {
                         article.setPublicationDate(null);
                     }
 
-                    // Autor
                     try {
                         JsonNode authorNode = post.get("_embedded") != null
                                 ? post.get("_embedded").get("author")
@@ -103,7 +98,6 @@ public class NewsScraperService {
                         article.setAuthor("N/A");
                     }
 
-                    // Conteúdo completo
                     try {
                         if (!article.getUrl().isEmpty()) {
                             Document doc = Jsoup.connect(article.getUrl()).get();
@@ -116,7 +110,6 @@ public class NewsScraperService {
                         System.err.println("⚠️ Falha ao obter conteúdo da URL: " + article.getUrl());
                     }
 
-                    // Impressão formatada
                     System.out.println("--------------------------------------------------");
                     System.out.println("Título: " + article.getTitle());
                     System.out.println("Subtítulo: " + article.getSubtitle());
