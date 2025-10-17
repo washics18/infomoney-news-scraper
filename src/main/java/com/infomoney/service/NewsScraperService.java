@@ -8,8 +8,6 @@ import com.infomoney.repository.ArticleRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -27,8 +25,6 @@ public class NewsScraperService {
             "https://www.infomoney.com.br/wp-json/wp/v2/posts?per_page=10&_embed&page=";
     private static final int MAX_PAGES = 3;
 
-    private static final Logger logger = LoggerFactory.getLogger(NewsScraperService.class);
-
     @Autowired
     private ArticleRepository articleRepository;
 
@@ -41,18 +37,18 @@ public class NewsScraperService {
 
         for (int i = 1; i <= MAX_PAGES; i++) {
             String url = API_URL + i;
-            logger.info("🔎 Buscando notícias da página: {}", url);
+            System.out.println("🔎 Buscando notícias da página: " + url);
 
             try {
                 String jsonResponse = restTemplate.getForObject(url, String.class);
                 if (jsonResponse == null || jsonResponse.isEmpty()) {
-                    logger.warn("⚠️ Nenhuma resposta da API nesta página.");
+                    System.out.println("⚠️ Nenhuma resposta da API nesta página.");
                     continue;
                 }
 
                 JsonNode root = objectMapper.readTree(jsonResponse);
                 if (!root.isArray() || root.size() == 0) {
-                    logger.warn("⚠️ Nenhum artigo encontrado nesta página.");
+                    System.out.println("⚠️ Nenhum artigo encontrado nesta página.");
                     continue;
                 }
 
@@ -94,25 +90,30 @@ public class NewsScraperService {
                             }
                         }
                     } catch (Exception e) {
-                        logger.warn("⚠️ Falha ao obter conteúdo da URL: {}", dto.getUrl(), e);
+                        System.err.println("⚠️ Falha ao obter conteúdo da URL:" + dto.getUrl());
                     }
 
-                    logger.info("Título: {}", dto.getTitle());
-                    logger.info("Subtítulo: {}", dto.getSubtitle());
-                    logger.info("Autor: {}", dto.getAuthor());
-                    logger.info("Data: {}", dto.getPublicationDate() != null ? dto.getPublicationDate().format(outputFormatter) : "N/A");
-                    logger.info("URL: {}", dto.getUrl());
-                    logger.info("Conteúdo: {}", dto.getContent());
+                    System.out.println("--------------------------------------------------");
+                    System.out.println("Título: " + dto.getTitle());
+                    System.out.println("Subtítulo: " + dto.getSubtitle());
+                    System.out.println("Autor: " + dto.getAuthor());
+                    if (dto.getPublicationDate() != null) {
+                        System.out.println("Data: " + dto.getPublicationDate().format(outputFormatter));
+                    } else {
+                        System.out.println("Data: N/A");
+                    }
+                    System.out.println("URL: " + dto.getUrl());
+                    System.out.println("Conteúdo: " + dto.getContent());
 
                     dtos.add(dto);
                 }
 
             } catch (Exception e) {
-                logger.error("❌ Erro ao acessar {}: {}", url, e.getMessage(), e);
+                System.err.println("❌ Erro ao acessar " + url + ": " + e.getMessage());
             }
         }
 
-        logger.info("💾 Total de artigos encontrados: {}", dtos.size());
+        System.out.println("💾 Total de artigos encontrados: " + dtos.size());
         return dtos;
     }
 
